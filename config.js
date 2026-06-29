@@ -3,7 +3,7 @@ const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR3UdKh-h
 const SHEET_VIEW_URL = "https://docs.google.com/spreadsheets/d/1JJCRGWs1HoI2wcAtEZU9HiDKxaFZmoA0Hx-Cu0JlU_E/edit";
 
 // Your Cloudflare Worker URL - replace after you deploy
-const WORKER_URL = "https://dgca-groq-proxy.your-subdomain.workers.dev";
+const WORKER_URL = "https://dgca-groq-proxy.shubhamkumarvinod.workers.dev";
 
 const GROQ_MODEL = "llama-3.3-70b-versatile";
 const REFRESH_INTERVAL_MS = 300000;
