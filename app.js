@@ -3,114 +3,97 @@ let DATA = [];
 const statusEl = document.getElementById('status');
 const metaEl = document.getElementById('meta');
 
+// Theme
+const themeToggle = document.getElementById('themeToggle');
+function initTheme(){
+  const saved = localStorage.getItem('theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', saved);
+  themeToggle.textContent = saved === 'dark' ? '🌙' : '☀️';
+}
+themeToggle.onclick = () => {
+  const cur = document.documentElement.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('theme', next);
+  themeToggle.textContent = next === 'dark' ? '🌙' : '☀️';
+};
+initTheme();
+
+statusEl.href = SHEET_VIEW_URL;
+
 async function loadSheet() {
   statusEl.textContent = 'Loading...';
   try {
-    const url = SHEET_CSV_URL + (SHEET_CSV_URL.includes('?') ? '&' : '?') + '_=' + Date.now();
+    const url = SHEET_CSV_URL + '&_=' + Date.now();
     const res = await fetch(url, {cache:'no-store'});
     if(!res.ok) throw new Error('HTTP '+res.status);
     const csv = await res.text();
     const parsed = Papa.parse(csv, {header:true, skipEmptyLines:true});
     DATA = parsed.data.map(cleanRow).filter(r=>r.link);
     statusEl.textContent = `Live • ${DATA.length} docs`;
-    statusEl.style.color = '#86efac';
-    buildFilters();
-    renderTable();
-    buildSuggestions();
-    metaEl.textContent = `Last sync: ${new Date().toLocaleString()} • Source: Google Sheets`;
-  } catch(e) {
-    statusEl.textContent = 'Offline – using sample';
-    statusEl.style.color = '#fca5a5';
-    console.error(e);
-    // fallback sample
-    DATA = sampleData();
     buildFilters(); renderTable(); buildSuggestions();
+    metaEl.textContent = `Last sync: ${new Date().toLocaleString()}`;
+  } catch(e) {
+    statusEl.textContent = 'Offline';
+    DATA = sampleData(); buildFilters(); renderTable(); buildSuggestions();
   }
 }
 
 function cleanRow(r){
   const get = k => (r[k]||'').trim();
+  const services = Array.from({length:21},(_,i)=>get('Service'+(i+1))).filter(Boolean);
+  const dirMatch = services.join(' ').match(/Directorate\s*=\s*([A-Za-z]+)/);
   return {
     link: get('Website Document Link'),
     original: get('Original File Name'),
     newName: get('New File Name'),
-    ocr: get('OCR Required'),
     type: get('Type'),
     section: get('Section'),
     date: get('Date of Amendment'),
     desc: get('Description'),
-    services: Array.from({length:21},(_,i)=>get('Service'+(i+1))).filter(Boolean).join(' | '),
-    directorate: (get('Service1').match(/Directorate\s*=\s*([^,]+)/)||[])[1] || ''
+    directorate: dirMatch ? dirMatch[1] : ''
   };
 }
 
-function buildFilters(){
+function buildFilters(){ /* same as before */ 
   const dirs = [...new Set(DATA.map(d=>d.directorate).filter(Boolean))].sort();
   const secs = [...new Set(DATA.map(d=>d.section).filter(Boolean))].sort();
   const types = [...new Set(DATA.map(d=>d.type).filter(Boolean))].sort();
-  const dirSel = document.getElementById('directorate');
-  const secSel = document.getElementById('section');
-  const typSel = document.getElementById('type');
-  dirSel.innerHTML = '<option value="">All Directorates</option>' + dirs.map(d=>`<option>${d}</option>`).join('');
-  secSel.innerHTML = '<option value="">All Sections</option>' + secs.map(s=>`<option>${s}</option>`).join('');
-  typSel.innerHTML = '<option value="">All Types</option>' + types.map(t=>`<option>${t}</option>`).join('');
+  document.getElementById('directorate').innerHTML = '<option value="">All Directorates</option>' + dirs.map(d=>`<option>${d}</option>`).join('');
+  document.getElementById('section').innerHTML = '<option value="">All Sections</option>' + secs.map(s=>`<option>${s}</option>`).join('');
+  document.getElementById('type').innerHTML = '<option value="">All Types</option>' + types.map(t=>`<option>${t}</option>`).join('');
 }
-
-function renderTable(){
+function renderTable(){ /* same */
   const q = document.getElementById('search').value.toLowerCase();
   const dir = document.getElementById('directorate').value;
   const sec = document.getElementById('section').value;
   const typ = document.getElementById('type').value;
   const tbody = document.querySelector('#tbl tbody');
-  const filtered = DATA.filter(d=>{
-    const hay = `${d.original} ${d.newName} ${d.desc} ${d.section}`.toLowerCase();
-    return (!q||hay.includes(q)) && (!dir||d.directorate===dir) && (!sec||d.section===sec) && (!typ||d.type===typ);
-  });
-  tbody.innerHTML = filtered.map(d=>`
-    <tr>
-      <td>${d.newName!=='No Change'&&d.newName!=='NO CHANGE'?d.newName:d.original}</td>
-      <td>${d.type}</td>
-      <td>${d.section}</td>
-      <td>${d.date}</td>
-      <td>${d.desc}</td>
-      <td>${d.directorate}</td>
-      <td><a href="${d.link}" target="_blank">View</a></td>
-    </tr>`).join('');
-  metaEl.textContent = `${filtered.length} of ${DATA.length} documents • ${metaEl.textContent.split('•').slice(1).join('•')}`;
+  const filtered = DATA.filter(d=>{ const hay=`${d.original} ${d.newName} ${d.desc} ${d.section}`.toLowerCase(); return (!q||hay.includes(q)) && (!dir||d.directorate===dir) && (!sec||d.section===sec) && (!typ||d.type===typ);});
+  tbody.innerHTML = filtered.map(d=>`<tr><td>${d.newName && !/no change/i.test(d.newName)?d.newName:d.original}</td><td>${d.type}</td><td>${d.section}</td><td>${d.date}</td><td>${d.desc}</td><td>${d.directorate}</td><td><a href="${d.link}" target="_blank">View</a></td></tr>`).join('');
+  metaEl.textContent = `${filtered.length} of ${DATA.length} documents`;
+}
+function buildSuggestions(){ const qs=['What is CAR 21?','How to register aircraft?','CAR-M requirements?']; document.getElementById('suggest').innerHTML=qs.map(q=>`<button>${q}</button>`).join(''); document.querySelectorAll('#suggest button').forEach(b=>b.onclick=()=>ask(b.textContent));}
+function findRelevantDocs(q,n=8){ const words=q.toLowerCase().split(/\W+/); return DATA.map(d=>({...d,score:words.reduce((s,w)=>s+(w.length>3&&(d.desc+d.section).toLowerCase().includes(w)?1:0),0)})).sort((a,b)=>b.score-a.score).slice(0,n);}
+
+async function ask(text){
+  const m=document.getElementById('messages');
+  m.innerHTML+=`<div class="msg user">${text}</div>`;
+  const thinking=document.createElement('div'); thinking.className='msg bot'; thinking.textContent='Thinking...'; m.appendChild(thinking); m.scrollTop=m.scrollHeight;
+  try{
+    const relevant=findRelevantDocs(text,8);
+    const context=relevant.map((d,i)=>`${i+1}. ${d.desc} | Doc:${d.original} | Section:${d.section} | Date:${d.date} | Link:${d.link}`).join('\n');
+    const prompt=`Answer using ONLY these DGCA documents. Cite name, section, date.\n\n${context}\n\nQuestion: ${text}`;
+    const res=await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:GROQ_MODEL,messages:[{role:'system',content:'You are DGCA expert'},{role:'user',content:prompt}],temperature:0.1})});
+    const data=await res.json(); const answer=data.choices?.[0]?.message?.content||'No response';
+    thinking.innerHTML=answer.replace(/\n/g,'<br>')+`<br><br><small>Sources: ${relevant.slice(0,3).map(d=>`<a href="${d.link}" target="_blank">${d.original}</a>`).join(', ')}</small>`;
+  }catch(e){thinking.textContent='Error: '+e.message+' - check WORKER_URL in config.js';}
 }
 
-function buildSuggestions(){
-  const qs = [
-    'What is CAR 21 certification procedure?',
-    'How to register aircraft in India?',
-    'Requirements for Type Certificate acceptance',
-    'What is CAR-M continued airworthiness?',
-    'Special Flight Permit process'
-  ];
-  document.getElementById('suggest').innerHTML = qs.map(q=>`<button>${q}</button>`).join('');
-  document.querySelectorAll('#suggest button').forEach(b=>b.onclick=()=>ask(b.textContent));
-}
-
-function ask(text){
-  const m = document.getElementById('messages');
-  m.innerHTML += `<div class="msg user">${text}</div>`;
-  const hit = DATA.find(d=>text.toLowerCase().split(' ').some(w=>d.desc.toLowerCase().includes(w))) || DATA[0];
-  const reply = `Based on your sheet: <b>${hit.desc}</b><br>• Document: ${hit.original}<br>• Section: ${hit.section}<br>• Amended: ${hit.date}<br>• Directorate: ${hit.directorate}<br><a href="${hit.link}" target="_blank">Open official PDF</a>`;
-  setTimeout(()=>{m.innerHTML+=`<div class="msg bot">${reply}</div>`; m.scrollTop=m.scrollHeight;},400);
-  document.getElementById('chatInput').value='';
-}
-
-document.getElementById('send').onclick = ()=>{ const v=document.getElementById('chatInput').value.trim(); if(v) ask(v); };
+document.getElementById('send').onclick=()=>{const v=document.getElementById('chatInput').value.trim();if(v)ask(v)};
 document.getElementById('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('send').click()});
 ['search','directorate','section','type'].forEach(id=>document.getElementById(id).addEventListener('input',renderTable));
 document.getElementById('refresh').onclick=loadSheet;
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));t.classList.add('active');document.getElementById(t.dataset.tab).classList.add('active')});
-
-function sampleData(){return [
-{link:'#',original:'D6A-A2.pdf',newName:'',type:'CAR',section:'CAR, SECTION 6, SERIES A, PART 2',date:'20.01.2022',desc:'Requirements for recognition/ acceptance of Type Certificate',directorate:'AED'},
-{link:'#',original:'CAR21.pdf',newName:'CAR21.pdf',type:'CAR',section:'CAR, SECTION 6, SERIES B, CAR 21',date:'18.07.2025',desc:'Certification Procedures for Aircraft and related products',directorate:'AED'}
-];}
-
-loadSheet();
-setInterval(loadSheet, REFRESH_INTERVAL_MS);
-document.getElementById('cfgPreview').textContent = `SHEET_CSV_URL = "${SHEET_CSV_URL}"`;
+function sampleData(){return []}
+loadSheet(); setInterval(loadSheet, REFRESH_INTERVAL_MS);

@@ -18,13 +18,15 @@
         <p>Live from Google Sheets • Directorate General of Civil Aviation</p>
       </div>
     </div>
-    <div class="status" id="status">Connecting...</div>
+    <div class="header-actions">
+      <button id="themeToggle" title="Toggle theme">🌙</button>
+      <a id="status" class="status" target="_blank">Connecting...</a>
+    </div>
   </header>
 
   <nav class="tabs">
     <button class="tab active" data-tab="kb">Knowledge Base</button>
     <button class="tab" data-tab="chat">Chat Assistant</button>
-    <button class="tab" data-tab="setup">Setup</button>
   </nav>
 
   <main>
@@ -52,6 +54,7 @@
         <aside class="suggestions">
           <h3>Try asking</h3>
           <div id="suggest"></div>
+          <div class="api-note">Powered by Groq + your sheet</div>
         </aside>
         <div class="chat">
           <div id="messages"></div>
@@ -61,17 +64,6 @@
           </div>
         </div>
       </div>
-    </section>
-
-    <section id="setup" class="panel">
-      <h2>Deploy on GitHub – 3 steps</h2>
-      <ol>
-        <li><strong>Publish your Sheet:</strong> File → Share → Publish to web → choose Sheet1 → CSV. Copy the link.</li>
-        <li><strong>Edit config:</strong> Open <code>config.js</code> and paste your CSV URL as <code>SHEET_CSV_URL</code>.</li>
-        <li><strong>Push to GitHub:</strong> Create repo, upload these files, enable Settings → Pages → Deploy from main branch. Done.</li>
-      </ol>
-      <p>Your site will fetch the sheet live on every load. Updates in Google Sheets appear instantly (no rebuild).</p>
-      <pre id="cfgPreview"></pre>
     </section>
   </main>
 
