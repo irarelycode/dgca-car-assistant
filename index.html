@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>DGCA CAR Assistant</title>
+<link rel="stylesheet" href="style.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+</head>
+<body>
+<header>
+  <div class="brand"><div class="logo">✈️</div><div><h1>DGCA CAR Assistant</h1><p>Live from Google Sheets</p></div></div>
+  <div class="header-actions"><button id="themeToggle" title="Toggle">🌙</button><a id="status" class="status" target="_blank">Connecting...</a></div>
+</header>
+<nav class="tabs">
+  <button class="tab active" data-tab="kb">Knowledge Base</button>
+  <button class="tab" data-tab="chat">Chat</button>
+  <button class="tab" data-tab="manage">Add / Edit</button>
+</nav>
+<main>
+<section id="kb" class="panel active">
+  <div class="controls"><input id="search" placeholder="Search..."><select id="directorate"><option value="">All Directorates</option></select><select id="section"><option value="">All Sections</option></select><button id="refresh">↻ Refresh</button></div>
+  <div class="meta" id="meta"></div>
+  <div class="table-wrap"><table id="tbl"><thead><tr><th>Document</th><th>Type</th><th>Section</th><th>Date</th><th>Description</th><th>Directorate</th><th>Link</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
+</section>
+<section id="chat" class="panel"><div class="chat-wrap"><aside class="suggestions"><h3>Try</h3><div id="suggest"></div><div class="api-note">Powered by Groq</div></aside><div class="chat"><div id="messages"></div><div class="input-row"><input id="chatInput" placeholder="Ask..."><button id="send">Send</button></div></div></div></section>
+<section id="manage" class="panel"><div class="form-card"><h2>Add / Update Document</h2><p class="hint">Check duplicate by Website Document Link first. All fields optional.</p>
+<form id="docForm">
+<label>Website Document Link*<input name="link" required type="url"></label>
+<div class="grid2"><label>Original File Name<input name="original"></label><label>New File Name<input name="newName"></label></div>
+<div class="grid3"><label>OCR<select name="ocr"><option></option><option>YES</option><option>NO</option></select></label><label>Type<input name="type"></label><label>Date<input name="date" placeholder="DD.MM.YYYY"></label></div>
+<label>Section<input name="section"></label><label>Description<textarea name="desc" rows="3"></textarea></label><label>Service1<input name="service1"></label>
+<div class="form-actions"><button type="button" id="checkBtn" class="secondary">Check Duplicate</button><span id="formStatus"></span></div>
+</form><div id="duplicateCard" class="duplicate hidden"></div>
+<p style="margin-top:20px;font-size:12px;color:var(--muted)">Note: This checks your loaded sheet only. To actually save to Google Sheet, add the row manually for now, or deploy the Apps Script later.</p>
+</div></section>
+</main>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body></html>
